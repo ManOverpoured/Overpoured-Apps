@@ -28,4 +28,31 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-decoration: none;
             color: inherit;
-            transition: tr
+            transition: transform 0.2s;
+        }
+        .app-card:hover {
+            transform: translateY(-5px);
+        }
+        .app-card h2 {
+            margin: 0 0 10px 0;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Overpoured Apps</h1>
+    <p>A collection of web applications</p>
+    
+    <div class="app-grid">
+        <a href="/christmas-bingo" class="app-card">
+            <h2>🎄 Christmas Bingo</h2>
+            <p>Play bingo with Christmas movie tropes</p>
+        </a>
+        
+        <div class="app-card" style="opacity: 0.5;">
+            <h2>📱 Coming Soon</h2>
+            <p>More apps on the way...</p>
+        </div>
+    </div>
+</body>
+</html>
