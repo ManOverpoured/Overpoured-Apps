@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/christmas-bingo/:path*",
+      "destination": "https://christmas-bingo-mu.vercel.app/"
+    },
+    {
+      "source": "/phone-away/:path*",
+      "destination": "https://phone-away.vercel.app/"
+    }
+  ]
+}
