@@ -350,31 +350,41 @@
 
         // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water, 7 = decoration, 8 = snow)
         const mapData = [
-            [0,1,0,0,0,0,0,1,0,0],
-            [0,0,7,0,0,0,0,0,0,1],
-            [0,0,0,8,2,2,0,0,0,0],
-            [1,0,8,8,2,2,0,0,7,0],
+            [0,1,7,0,0,0,0,1,0,7],
+            [0,7,0,0,7,0,0,7,0,1],
+            [7,0,0,0,2,2,7,0,0,0],
+            [1,0,0,8,2,2,8,0,7,0],
             [0,7,8,4,2,2,3,8,0,0],
-            [0,0,8,4,2,2,3,8,0,1],
-            [0,0,0,0,2,2,0,0,0,0],
-            [0,1,0,0,2,2,0,7,0,0],
-            [0,0,7,0,2,2,0,0,0,0],
-            [5,5,0,0,0,0,0,1,0,0],
-            [5,5,0,1,0,7,0,0,0,0],
-            [5,0,0,0,0,0,0,0,0,0],
-            [0,0,7,0,0,0,0,6,6,0],
-            [0,1,0,0,0,7,0,6,6,0]
+            [0,0,0,0,2,2,0,0,7,1],
+            [7,0,0,0,2,2,0,7,0,0],
+            [0,1,0,7,2,2,0,0,0,7],
+            [0,7,0,0,2,2,7,0,0,0],
+            [5,5,7,0,0,0,0,1,7,0],
+            [5,5,0,1,7,0,0,0,0,7],
+            [5,0,0,7,0,0,0,0,7,0],
+            [0,7,0,0,0,7,0,6,6,0],
+            [0,1,7,0,0,0,0,6,6,7]
         ];
 
-        // Decoration positions (will render flowers, logs, etc)
+        // Decoration positions with more variety (types 0-8 for grass/nature items only)
         const decorations = [];
         for (let y = 0; y < mapData.length; y++) {
             for (let x = 0; x < mapData[y].length; x++) {
                 if (mapData[y][x] === 7) {
+                    // Weighted random: more grass tufts (0-2), fewer rocks/logs (3-8)
+                    const rand = Math.random();
+                    let type;
+                    if (rand < 0.6) {
+                        type = Math.floor(Math.random() * 3); // Grass tufts (top row)
+                    } else if (rand < 0.8) {
+                        type = Math.floor(Math.random() * 3) + 3; // Flowers
+                    } else {
+                        type = Math.floor(Math.random() * 3) + 6; // Rocks/logs
+                    }
                     decorations.push({
                         x: x,
                         y: y,
-                        type: Math.floor(Math.random() * 4) // Random decoration type
+                        type: type
                     });
                 }
             }
@@ -444,19 +454,23 @@
             const px = dec.x * TILE_SIZE;
             const py = dec.y * TILE_SIZE;
             
-            // Different decoration types from the decor sprite sheet - scaled up
-            if (dec.type === 0) {
-                // Flower
-                drawSprite(sprites.decor, 0, 0, 16, 16, px + 16, py + 16, 32, 32);
-            } else if (dec.type === 1) {
-                // Rock/stone
-                drawSprite(sprites.decor, 16, 0, 16, 16, px + 12, py + 20, 40, 40);
-            } else if (dec.type === 2) {
-                // Mushroom
-                drawSprite(sprites.decor, 32, 0, 16, 16, px + 20, py + 20, 28, 28);
+            // Using left 3 columns of Outdoor_Decor_Free sprite sheet
+            // Row 0 (0-2): Grass tufts
+            // Row 1 (3-5): Flowers  
+            // Row 2 (6-8): Rocks and logs
+            
+            const col = dec.type % 3;
+            const row = Math.floor(dec.type / 3);
+            
+            if (row === 0) {
+                // Grass tufts - smaller, subtle
+                drawSprite(sprites.decor, col * 16, 0, 16, 16, px + 20, py + 24, 24, 24);
+            } else if (row === 1) {
+                // Flowers - medium size
+                drawSprite(sprites.decor, col * 16, 16, 16, 16, px + 16, py + 20, 32, 32);
             } else {
-                // Log
-                drawSprite(sprites.decor, 48, 0, 16, 16, px + 12, py + 24, 40, 32);
+                // Rocks/logs - larger
+                drawSprite(sprites.decor, col * 16, 32, 16, 16, px + 12, py + 24, 40, 36);
             }
         }
 
