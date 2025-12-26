@@ -306,7 +306,7 @@
         // Game state
         let player = {
             x: 10,
-            y: 12,
+            y: 10,
             direction: 0, // 0=down, 1=up, 2=left, 3=right
             frame: 0,
             moving: false,
@@ -322,43 +322,43 @@
         let currentPrompt = null;
         let promptShowing = false;
 
-        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path)
+        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water)
         const mapData = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,1,0,0,2,2,2,2,0,0,1,0,0,0,0,1],
-            [1,0,0,0,0,1,0,0,2,2,2,2,0,0,1,0,0,0,0,1],
-            [1,0,0,0,0,1,1,1,2,2,2,2,1,1,1,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,1],
-            [1,1,1,0,0,0,0,0,2,2,2,2,0,0,0,0,0,1,1,1],
-            [1,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,1],
-            [1,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,1],
-            [1,0,0,0,0,2,2,3,0,0,0,0,4,2,2,0,0,0,0,1],
-            [1,0,0,0,0,2,2,3,0,0,0,0,4,2,2,0,0,0,0,1],
-            [1,0,0,0,0,2,2,3,0,0,0,0,4,2,2,0,0,0,0,1],
-            [1,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            [0,0,1,0,0,0,0,0,0,2,2,0,0,0,0,0,1,0,0,0],
+            [0,0,0,0,0,0,0,0,0,2,2,0,0,1,0,0,0,0,0,0],
+            [0,0,0,1,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,2,2,2,2,0,0,3,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,2,2,2,2,0,3,3,3,0,0,0,1],
+            [0,1,0,0,0,0,0,2,2,2,2,2,2,3,3,3,0,0,0,0],
+            [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,1,0,0],
+            [0,0,0,1,0,2,2,2,4,0,0,0,2,2,2,0,0,0,0,0],
+            [0,0,0,0,0,2,2,4,4,4,0,0,0,2,2,0,0,0,0,1],
+            [0,1,0,0,0,2,2,4,4,4,0,0,0,2,2,0,0,0,0,0],
+            [5,5,5,0,0,0,2,2,2,2,2,2,2,2,0,0,1,0,0,0],
+            [5,5,5,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0],
+            [5,5,5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+            [0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,6,6,0],
+            [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,0]
         ];
 
         // Interactive locations
         const locations = [
             { 
-                x: 7, y: 8, width: 1, height: 3,
+                x: 8, y: 3, width: 1, height: 3,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
                 type: 'christmas'
             },
             { 
-                x: 12, y: 8, width: 1, height: 3,
+                x: 14, y: 3, width: 1, height: 3,
                 name: 'Phone Away',
                 description: 'An app for groups to put their phones away together to stay present with each other',
                 url: '/phone-away',
                 type: 'locker'
             },
             { 
-                x: 16, y: 1, width: 2, height: 2,
+                x: 17, y: 13, width: 2, height: 2,
                 name: 'Coming Soon',
                 description: 'This area is under construction. More apps coming soon!',
                 url: null,
@@ -378,11 +378,16 @@
             const py = y * TILE_SIZE;
 
             if (type === 1) {
-                // Tree
-                drawSprite(sprites.tree, 0, 0, 32, 48, px, py - 16, 32, 48);
+                // Tree - the sprite is 32x48, draw it properly centered
+                drawSprite(sprites.tree, 0, 0, 32, 48, px - 0, py - 16, 32, 48);
             } else if (type === 2) {
                 // Path
                 drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            } else if (type === 5) {
+                // Water
+                drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+                ctx.fillStyle = 'rgba(64, 164, 223, 0.7)';
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
             } else {
                 // Grass
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -394,12 +399,12 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Large decorated tree
-            drawSprite(sprites.tree, 0, 0, 32, 48, px - 16, py - 32, 64, 96);
+            // Large decorated tree - the sprite is 32x48, scale it up
+            drawSprite(sprites.tree, 0, 0, 32, 48, px - 8, py - 24, 48, 72);
             
             // Add decorations using decor sprite (presents at base)
-            drawSprite(sprites.decor, 32, 16, 16, 16, px - 8, py + 32, 16, 16);
-            drawSprite(sprites.decor, 48, 16, 16, 16, px + 24, py + 32, 16, 16);
+            drawSprite(sprites.decor, 32, 16, 16, 16, px - 4, py + 40, 20, 20);
+            drawSprite(sprites.decor, 48, 16, 16, 16, px + 20, py + 40, 20, 20);
         }
 
         // Draw locker building
@@ -407,11 +412,11 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Use modified house as locker structure
-            drawSprite(sprites.house, 0, 0, 80, 96, px - 24, py - 32, 80, 96);
+            // Use modified house as locker structure - house sprite is 80x96
+            drawSprite(sprites.house, 0, 0, 80, 96, px - 24, py - 40, 80, 96);
             
-            // Add lock/chest imagery
-            drawSprite(sprites.chest, 0, 0, 16, 16, px, py + 32, 16, 16);
+            // Add lock/chest imagery - chest is 16x16
+            drawSprite(sprites.chest, 0, 0, 16, 16, px + 8, py + 48, 16, 16);
         }
 
         // Draw construction zone
@@ -419,7 +424,7 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Fence barriers
+            // Fence barriers - fence sprite is 16x16
             drawSprite(sprites.fence, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -452,12 +457,13 @@
             const px = player.x * TILE_SIZE;
             const py = player.y * TILE_SIZE;
             
-            // Calculate sprite position in sheet
-            // Player sprite has 6 frames per direction, 4 directions
-            const frameX = player.frame * player.spriteWidth;
-            const frameY = player.direction * player.spriteHeight;
+            // Player sprite sheet has characters that are 16x16 pixels each
+            // 6 frames per row (animation frames), 4 rows (directions)
+            const frameX = player.frame * 16;
+            const frameY = player.direction * 16;
             
-            drawSprite(sprites.player, frameX, frameY, player.spriteWidth, player.spriteHeight, 
+            // Draw the full 16x16 player sprite scaled to 32x32 (TILE_SIZE)
+            drawSprite(sprites.player, frameX, frameY, 16, 16, 
                       px, py, TILE_SIZE, TILE_SIZE);
         }
 
@@ -563,7 +569,8 @@
             // Check bounds and collisions
             if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
                 const tile = mapData[newY][newX];
-                if (tile !== 1) {
+                // Can't walk on trees (1), water (5), or construction zone (6)
+                if (tile !== 1 && tile !== 5 && tile !== 6) {
                     // Check building collisions
                     let canMove = true;
                     for (let loc of locations) {
