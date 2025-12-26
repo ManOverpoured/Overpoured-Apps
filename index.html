@@ -349,13 +349,13 @@
             [0,0,1,0,0,0,0,0,0,2,2,0,0,0,0,0,1,0,0,0],
             [0,0,0,0,0,0,0,0,0,2,2,0,0,1,0,0,0,0,0,0],
             [0,0,0,1,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,0,0,2,2,2,2,0,0,3,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,2,2,2,2,0,3,3,3,0,0,0,1],
-            [0,1,0,0,0,0,0,2,2,2,2,2,2,3,3,3,0,0,0,0],
+            [1,0,0,0,0,0,4,0,2,2,2,2,0,0,3,0,0,0,0,0],
+            [0,0,0,0,0,0,4,4,2,2,2,2,0,3,3,3,0,0,0,1],
+            [0,1,0,0,0,0,4,2,2,2,2,2,2,3,3,3,0,0,0,0],
             [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,1,0,0],
-            [0,0,0,1,0,2,2,2,4,0,0,0,2,2,2,0,0,0,0,0],
-            [0,0,0,0,0,2,2,4,4,4,0,0,0,2,2,0,0,0,0,1],
-            [0,1,0,0,0,2,2,4,4,4,0,0,0,2,2,0,0,0,0,0],
+            [0,0,0,1,0,2,2,2,0,0,0,0,2,2,2,0,0,0,0,0],
+            [0,0,0,0,0,2,2,0,0,0,0,0,0,2,2,0,0,0,0,1],
+            [0,1,0,0,0,2,2,0,0,0,0,0,0,2,2,0,0,0,0,0],
             [5,5,5,0,0,0,2,2,2,2,2,2,2,2,0,0,1,0,0,0],
             [5,5,5,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0],
             [5,5,5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
@@ -366,7 +366,7 @@
         // Interactive locations
         const locations = [
             { 
-                x: 8, y: 3, width: 1, height: 3,
+                x: 6, y: 3, width: 1, height: 3,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
@@ -422,12 +422,12 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Large decorated tree - the sprite is 32x48, scale it up
-            drawSprite(sprites.tree, 0, 0, 32, 48, px - 8, py - 24, 48, 72);
+            // Large decorated tree - use full tree sprite (32x40), scale it up
+            drawSprite(sprites.tree, 0, 0, 32, 40, px - 8, py - 16, 48, 60);
             
             // Add decorations using decor sprite (presents at base)
-            drawSprite(sprites.decor, 32, 16, 16, 16, px - 4, py + 40, 20, 20);
-            drawSprite(sprites.decor, 48, 16, 16, 16, px + 20, py + 40, 20, 20);
+            drawSprite(sprites.decor, 32, 16, 16, 16, px - 4, py + 36, 20, 20);
+            drawSprite(sprites.decor, 48, 16, 16, 16, px + 20, py + 36, 20, 20);
         }
 
         // Draw locker building
@@ -585,11 +585,12 @@
             const newX = player.x + dx;
             const newY = player.y + dy;
 
-            // Update direction
-            if (dy < 0) player.direction = 1; // up
-            else if (dy > 0) player.direction = 0; // down
-            else if (dx < 0) player.direction = 2; // left
-            else if (dx > 0) player.direction = 3; // right
+            // Update direction based on sprite sheet rows
+            // Row 0 = down, Row 1 = left, Row 2 = right, Row 3 = up
+            if (dy > 0) player.direction = 0; // down
+            else if (dx < 0) player.direction = 1; // left
+            else if (dx > 0) player.direction = 2; // right
+            else if (dy < 0) player.direction = 3; // up
 
             // Check bounds and collisions
             if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
