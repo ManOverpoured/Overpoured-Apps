@@ -348,15 +348,15 @@
         let currentPrompt = null;
         let promptShowing = false;
 
-        // Map data - minimal snow, buildings at top, fewer trees
+        // Map data - no snow, proper pathways connecting buildings
         const mapData = [
-            [0,7,4,0,0,0,3,7],
-            [7,0,0,0,0,0,0,0],
-            [0,0,0,2,2,8,0,7],
-            [1,0,0,2,2,8,0,0],
-            [0,0,7,2,2,0,7,0],
-            [0,7,0,2,2,0,0,0],
-            [7,0,0,2,2,0,0,7],
+            [0,7,4,2,2,2,3,7],
+            [7,0,0,2,2,2,0,0],
+            [0,0,0,2,2,2,0,7],
+            [1,0,0,2,2,2,0,0],
+            [0,0,7,2,2,2,7,0],
+            [0,7,0,2,2,2,0,0],
+            [7,0,0,2,2,2,0,7],
             [0,0,7,0,0,7,0,1],
             [5,5,0,0,7,0,6,6],
             [5,5,7,1,0,7,6,6]
@@ -385,17 +385,17 @@
             }
         }
 
-        // Interactive locations - buildings at top corners
+        // Interactive locations - detection zones moved left by 1 tile
         const locations = [
             { 
-                x: 2, y: 0, width: 1, height: 1,
+                x: 1, y: 0, width: 1, height: 1,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
                 type: 'christmas'
             },
             { 
-                x: 6, y: 0, width: 1, height: 1,
+                x: 5, y: 0, width: 1, height: 1,
                 name: 'Phone Away',
                 description: 'An app for groups to put their phones away together to stay present with each other',
                 url: '/phone-away',
@@ -425,8 +425,8 @@
                 // Tree - much bigger, fewer trees
                 drawSprite(sprites.tree, 0, 0, 64, 80, px - 32, py - 80, 160, 200);
             } else if (type === 2) {
-                // Path - using dirt/path tile (bottom right of tilemap)
-                drawSprite(sprites.path, 16, 16, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+                // Path - using original path middle tile
+                drawSprite(sprites.path, 16, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else if (type === 5) {
                 // Water
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -435,9 +435,6 @@
             } else if (type === 7) {
                 // Decoration placeholder (will be drawn separately)
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
-            } else if (type === 8) {
-                // Snow - using top-left snow tile from tilemap
-                drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else {
                 // Grass
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -470,13 +467,13 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Massive Christmas tree at top of screen
-            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 96, py - 32, 288, 288);
+            // Massive Christmas tree at top of screen - moved left slightly
+            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 128, py - 32, 288, 288);
             
-            // Add presents underneath - bigger
-            drawSprite(sprites.present1, 0, 0, 16, 16, px - 32, py + 160, 64, 64);
-            drawSprite(sprites.present3, 0, 0, 16, 16, px + 48, py + 176, 56, 56);
-            drawSprite(sprites.present1, 0, 0, 16, 16, px + 16, py + 144, 48, 48);
+            // Add presents underneath - moved down to be under tree
+            drawSprite(sprites.present1, 0, 0, 16, 16, px - 64, py + 200, 64, 64);
+            drawSprite(sprites.present3, 0, 0, 16, 16, px + 16, py + 216, 56, 56);
+            drawSprite(sprites.present1, 0, 0, 16, 16, px - 16, py + 184, 48, 48);
         }
 
         // Draw locker building
