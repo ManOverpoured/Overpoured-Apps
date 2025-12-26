@@ -299,7 +299,7 @@
         // Load sprites
         const sprites = {};
         const spriteFiles = {
-            player: 'Preston_Sprite_Sheet.png',
+            player: 'Preston_Sprite_Sheet_resized.png',
             grass: 'Grass_Middle.png',
             pathTile: 'Path_Tile.png',
             pathMiddle: 'Path_Middle.png',
@@ -338,8 +338,8 @@
             frame: 0,
             moving: false,
             facingLeft: false,
-            spriteWidth: 333,  // 2000 / 6 frames
-            spriteHeight: 357  // 1428 / 4 rows
+            spriteWidth: 100,  // 599 / 6 frames = ~100
+            spriteHeight: 107  // 428 / 4 rows = 107
         };
 
         let animationFrame = 0;
@@ -559,14 +559,14 @@
             const py = player.y * TILE_SIZE;
             
             // Preston sprite sheet: Row 0=down, Row 1=right, Row 2=up, Row 3=idle
-            // 6 frames per row, 333x357 per frame
-            const frameX = player.frame * 333;
+            // 6 frames per row, ~100x107 per frame
+            const frameX = player.frame * 100;
             let frameY;
             
             if (player.moving) {
-                frameY = player.direction * 357; // Use direction row when moving
+                frameY = player.direction * 107; // Use direction row when moving
             } else {
-                frameY = 3 * 357; // Row 3 = idle
+                frameY = 3 * 107; // Row 3 = idle
             }
             
             const playerSize = TILE_SIZE * 2; // Character fills 2 tiles (192px)
@@ -577,9 +577,9 @@
             if (player.facingLeft) {
                 ctx.translate(px + playerSize, py);
                 ctx.scale(-1, 1);
-                drawSprite(sprites.player, frameX, frameY, 333, 357, 0, 0, playerSize, playerSize);
+                drawSprite(sprites.player, frameX, frameY, 100, 107, 0, 0, playerSize, playerSize);
             } else {
-                drawSprite(sprites.player, frameX, frameY, 333, 357, px, py, playerSize, playerSize);
+                drawSprite(sprites.player, frameX, frameY, 100, 107, px, py, playerSize, playerSize);
             }
             
             ctx.restore();
