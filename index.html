@@ -263,7 +263,7 @@
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="624" height="864"></canvas>
+        <canvas id="gameCanvas" width="640" height="896"></canvas>
         <div id="instructions">
             ARROW KEYS - Move<br>
             SPACE/ENTER - Interact
@@ -292,17 +292,20 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const TILE_SIZE = 48; // Increased from 32 for better zoom
-        const GRID_WIDTH = 13; // Reduced for portrait/zoomed view
-        const GRID_HEIGHT = 18; // Increased for portrait orientation
+        const TILE_SIZE = 64; // Increased from 48 for much closer zoom
+        const GRID_WIDTH = 10; // Reduced for closer view
+        const GRID_HEIGHT = 14; // Portrait orientation
 
         // Load sprites
         const sprites = {};
         const spriteFiles = {
             player: 'Player.png',
             grass: 'Grass_Middle.png',
-            path: 'Path_Middle.png',
+            path: 'path-tilemap.png',
             tree: 'Oak_Tree.png',
+            christmasTree: 'main-tree.png',
+            present1: 'present1.png',
+            present3: 'present3.png',
             treeSmall: 'Oak_Tree_Small.png',
             house: 'House_1_Wood_Base_Blue.png',
             decor: 'Outdoor_Decor_Free.png',
@@ -326,8 +329,8 @@
 
         // Game state
         let player = {
-            x: 6,
-            y: 14,
+            x: 5,
+            y: 11,
             direction: 0, // 0=idle, 3=down, 4=right, 5=up
             frame: 0,
             moving: false,
@@ -345,26 +348,22 @@
         let currentPrompt = null;
         let promptShowing = false;
 
-        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water, 7 = decoration)
+        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water, 7 = decoration, 8 = snow)
         const mapData = [
-            [0,1,0,0,0,0,0,0,0,1,0,0,0],
-            [0,0,0,7,0,0,0,0,0,0,0,1,0],
-            [0,0,0,0,0,0,2,0,0,0,0,0,0],
-            [1,0,0,0,0,0,2,0,0,0,0,0,1],
-            [0,0,7,0,0,2,2,2,0,0,7,0,0],
-            [0,0,0,0,4,2,2,2,3,0,0,0,0],
-            [0,7,0,4,4,2,2,2,3,3,0,0,1],
-            [0,0,0,4,4,2,2,2,3,3,0,0,0],
-            [0,1,0,0,0,2,2,2,0,0,0,7,0],
-            [0,0,0,0,0,2,2,2,0,0,0,0,0],
-            [0,0,7,0,0,2,2,2,0,1,0,0,0],
-            [1,0,0,0,0,2,2,2,0,0,0,0,1],
-            [0,0,0,7,0,0,2,0,0,0,7,0,0],
-            [0,0,0,0,0,0,2,0,0,0,0,0,0],
-            [5,5,0,0,0,0,0,0,0,0,0,0,0],
-            [5,5,5,0,1,0,0,0,0,1,0,0,0],
-            [5,5,0,0,0,0,7,0,0,0,6,6,0],
-            [0,0,0,1,0,0,0,0,0,0,6,6,0]
+            [0,1,0,0,0,0,0,1,0,0],
+            [0,0,7,0,0,0,0,0,0,1],
+            [0,0,0,8,2,2,0,0,0,0],
+            [1,0,8,8,2,2,0,0,7,0],
+            [0,7,8,4,2,2,3,8,0,0],
+            [0,0,8,4,2,2,3,8,0,1],
+            [0,0,0,0,2,2,0,0,0,0],
+            [0,1,0,0,2,2,0,7,0,0],
+            [0,0,7,0,2,2,0,0,0,0],
+            [5,5,0,0,0,0,0,1,0,0],
+            [5,5,0,1,0,7,0,0,0,0],
+            [5,0,0,0,0,0,0,0,0,0],
+            [0,0,7,0,0,0,0,6,6,0],
+            [0,1,0,0,0,7,0,6,6,0]
         ];
 
         // Decoration positions (will render flowers, logs, etc)
@@ -384,21 +383,21 @@
         // Interactive locations
         const locations = [
             { 
-                x: 4, y: 5, width: 1, height: 3,
+                x: 3, y: 4, width: 1, height: 1,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
                 type: 'christmas'
             },
             { 
-                x: 8, y: 5, width: 1, height: 3,
+                x: 6, y: 4, width: 1, height: 1,
                 name: 'Phone Away',
                 description: 'An app for groups to put their phones away together to stay present with each other',
                 url: '/phone-away',
                 type: 'locker'
             },
             { 
-                x: 10, y: 16, width: 2, height: 2,
+                x: 7, y: 12, width: 2, height: 2,
                 name: 'Coming Soon',
                 description: 'This area is under construction. More apps coming soon!',
                 url: null,
@@ -418,11 +417,11 @@
             const py = y * TILE_SIZE;
 
             if (type === 1) {
-                // Tree - full sprite is 64x80 (appears to be 2 trees, use left half)
-                drawSprite(sprites.tree, 0, 0, 64, 80, px - 8, py - 32, 64, 80);
+                // Tree - full sprite is 64x80, scale it up significantly
+                drawSprite(sprites.tree, 0, 0, 64, 80, px - 16, py - 48, 96, 112);
             } else if (type === 2) {
-                // Path
-                drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+                // Path - using new path tilemap (assuming center tile)
+                drawSprite(sprites.path, 16, 16, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else if (type === 5) {
                 // Water
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -431,6 +430,9 @@
             } else if (type === 7) {
                 // Decoration placeholder (will be drawn separately)
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            } else if (type === 8) {
+                // Snow - using snow tile from new tilemap (top-left corner has snow)
+                drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else {
                 // Grass
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -442,19 +444,19 @@
             const px = dec.x * TILE_SIZE;
             const py = dec.y * TILE_SIZE;
             
-            // Different decoration types from the decor sprite sheet
+            // Different decoration types from the decor sprite sheet - scaled up
             if (dec.type === 0) {
                 // Flower
-                drawSprite(sprites.decor, 0, 0, 16, 16, px + 12, py + 12, 24, 24);
+                drawSprite(sprites.decor, 0, 0, 16, 16, px + 16, py + 16, 32, 32);
             } else if (dec.type === 1) {
                 // Rock/stone
-                drawSprite(sprites.decor, 16, 0, 16, 16, px + 8, py + 16, 32, 32);
+                drawSprite(sprites.decor, 16, 0, 16, 16, px + 12, py + 20, 40, 40);
             } else if (dec.type === 2) {
                 // Mushroom
-                drawSprite(sprites.decor, 32, 0, 16, 16, px + 16, py + 16, 20, 20);
+                drawSprite(sprites.decor, 32, 0, 16, 16, px + 20, py + 20, 28, 28);
             } else {
                 // Log
-                drawSprite(sprites.decor, 48, 0, 16, 16, px + 8, py + 20, 32, 24);
+                drawSprite(sprites.decor, 48, 0, 16, 16, px + 12, py + 24, 40, 32);
             }
         }
 
@@ -463,12 +465,13 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Large decorated tree - use full tree sprite (32x40), scale it up
-            drawSprite(sprites.tree, 0, 0, 32, 40, px - 8, py - 16, 48, 60);
+            // New Christmas tree sprite - scale it up significantly  
+            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 32, py - 64, 128, 128);
             
-            // Add decorations using decor sprite (presents at base)
-            drawSprite(sprites.decor, 32, 16, 16, 16, px - 4, py + 36, 20, 20);
-            drawSprite(sprites.decor, 48, 16, 16, 16, px + 20, py + 36, 20, 20);
+            // Add presents underneath
+            drawSprite(sprites.present1, 0, 0, 16, 16, px - 16, py + 32, 32, 32);
+            drawSprite(sprites.present3, 0, 0, 16, 16, px + 16, py + 36, 28, 28);
+            drawSprite(sprites.present1, 0, 0, 16, 16, px + 8, py + 28, 24, 24);
         }
 
         // Draw locker building
@@ -476,11 +479,11 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Use modified house as locker structure - house sprite is 80x96
-            drawSprite(sprites.house, 0, 0, 80, 96, px - 24, py - 40, 80, 96);
+            // Use modified house as locker structure - scale up significantly
+            drawSprite(sprites.house, 0, 0, 80, 96, px - 48, py - 80, 144, 176);
             
-            // Add lock/chest imagery - chest is 16x16
-            drawSprite(sprites.chest, 0, 0, 16, 16, px + 8, py + 48, 16, 16);
+            // Add lock/chest imagery
+            drawSprite(sprites.chest, 0, 0, 16, 16, px + 8, py + 64, 32, 32);
         }
 
         // Draw construction zone
@@ -488,19 +491,19 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Fence barriers - fence sprite is 16x16
+            // Fence barriers - scaled up
             drawSprite(sprites.fence, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
             
-            // Construction sign
+            // Construction sign - bigger text
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(px + 8, py + 8, 48, 20);
+            ctx.fillRect(px + 12, py + 12, 104, 40);
             ctx.fillStyle = '#FFD700';
-            ctx.font = '8px "Press Start 2P"';
+            ctx.font = '14px "Press Start 2P"';
             ctx.textAlign = 'center';
-            ctx.fillText('SOON', px + 32, py + 22);
+            ctx.fillText('SOON', px + 64, py + 40);
         }
 
         // Draw buildings/locations
@@ -570,13 +573,12 @@
         // Check if player is near a location
         function checkProximity() {
             for (let loc of locations) {
-                const centerX = loc.x + Math.floor(loc.width / 2);
-                const centerY = loc.y + loc.height;
-                const distX = Math.abs(player.x - centerX);
-                const distY = Math.abs(player.y - centerY);
+                // Check if player is directly in front of the building (1 tile below it)
+                const distX = Math.abs(player.x - loc.x);
+                const distY = player.y - (loc.y + loc.height);
                 
-                // Must be directly adjacent (1 tile away)
-                if (distX <= 1 && distY <= 1) {
+                // Must be directly in front (same x, 0-1 tiles below)
+                if (distX === 0 && distY >= 0 && distY <= 1) {
                     return loc;
                 }
             }
