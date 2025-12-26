@@ -561,13 +561,15 @@
             const py = player.y * TILE_SIZE;
             
             // Preston sprite sheet: Row 0=down, Row 1=right, Row 2=up, Row 3=idle
-            // 6 frames per row, ~100x107 per frame
-            const frameX = player.frame * 100;
-            let frameY;
+            // 6 frames per row for walking, but idle row only has ~4 frames
+            let frameX, frameY;
             
             if (player.moving) {
+                frameX = player.frame * 100;
                 frameY = player.direction * 107; // Use direction row when moving
             } else {
+                // Idle: only use frame 0 from row 3 to avoid transparent area
+                frameX = 0;
                 frameY = 3 * 107; // Row 3 = idle
             }
             
@@ -728,6 +730,7 @@
                         player.x = newX;
                         player.y = newY;
                         player.moving = true;
+                        player.frame = (player.frame + 1) % 6; // Advance one frame per tile
                         lastMoveTime = now;
 
                         setTimeout(() => { 
@@ -826,13 +829,6 @@
                 if (keys['ArrowDown'] || keys['s'] || keys['S'] || touchDirection === 'down') movePlayer(0, 1);
                 if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchDirection === 'left') movePlayer(-1, 0);
                 if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchDirection === 'right') movePlayer(1, 0);
-            }
-
-            // Animate player frames while moving
-            const now = Date.now();
-            if (player.moving && now - lastAnimTime > ANIM_DELAY) {
-                player.frame = (player.frame + 1) % 6;
-                lastAnimTime = now;
             }
 
             // Clear and draw
