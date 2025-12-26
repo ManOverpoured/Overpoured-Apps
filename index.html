@@ -263,7 +263,7 @@
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="640" height="896"></canvas>
+        <canvas id="gameCanvas" width="768" height="960"></canvas>
         <div id="instructions">
             ARROW KEYS - Move<br>
             SPACE/ENTER - Interact
@@ -292,9 +292,9 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const TILE_SIZE = 64; // Increased from 48 for much closer zoom
-        const GRID_WIDTH = 10; // Reduced for closer view
-        const GRID_HEIGHT = 14; // Portrait orientation
+        const TILE_SIZE = 96; // Increased significantly - character will span 2 tiles
+        const GRID_WIDTH = 8; // Even smaller grid for close-up view
+        const GRID_HEIGHT = 10; // Portrait orientation
 
         // Load sprites
         const sprites = {};
@@ -329,8 +329,8 @@
 
         // Game state
         let player = {
-            x: 5,
-            y: 11,
+            x: 4,
+            y: 6,
             direction: 0, // 0=idle, 3=down, 4=right, 5=up
             frame: 0,
             moving: false,
@@ -343,39 +343,34 @@
         let keys = {};
         let touchDirection = null;
         let lastMoveTime = 0;
-        const MOVE_DELAY = 150;
+        const MOVE_DELAY = 225; // Increased from 150 (50% slower)
         let gameStarted = false;
         let currentPrompt = null;
         let promptShowing = false;
 
-        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water, 7 = decoration, 8 = snow)
+        // Map data - minimal snow, buildings at top, fewer trees
         const mapData = [
-            [0,1,7,0,0,0,0,1,0,7],
-            [0,7,0,0,7,0,0,7,0,1],
-            [7,0,0,0,2,2,7,0,0,0],
-            [1,0,0,8,2,2,8,0,7,0],
-            [0,7,8,4,2,2,3,8,0,0],
-            [0,0,0,0,2,2,0,0,7,1],
-            [7,0,0,0,2,2,0,7,0,0],
-            [0,1,0,7,2,2,0,0,0,7],
-            [0,7,0,0,2,2,7,0,0,0],
-            [5,5,7,0,0,0,0,1,7,0],
-            [5,5,0,1,7,0,0,0,0,7],
-            [5,0,0,7,0,0,0,0,7,0],
-            [0,7,0,0,0,7,0,6,6,0],
-            [0,1,7,0,0,0,0,6,6,7]
+            [0,7,4,0,0,0,3,7],
+            [7,0,0,0,0,0,0,0],
+            [0,0,0,2,2,8,0,7],
+            [1,0,0,2,2,8,0,0],
+            [0,0,7,2,2,0,7,0],
+            [0,7,0,2,2,0,0,0],
+            [7,0,0,2,2,0,0,7],
+            [0,0,7,0,0,7,0,1],
+            [5,5,0,0,7,0,6,6],
+            [5,5,7,1,0,7,6,6]
         ];
 
-        // Decoration positions with more variety (types 0-8 for grass/nature items only)
+        // Decoration positions with more variety
         const decorations = [];
         for (let y = 0; y < mapData.length; y++) {
             for (let x = 0; x < mapData[y].length; x++) {
                 if (mapData[y][x] === 7) {
-                    // Weighted random: more grass tufts (0-2), fewer rocks/logs (3-8)
                     const rand = Math.random();
                     let type;
                     if (rand < 0.6) {
-                        type = Math.floor(Math.random() * 3); // Grass tufts (top row)
+                        type = Math.floor(Math.random() * 3); // Grass tufts
                     } else if (rand < 0.8) {
                         type = Math.floor(Math.random() * 3) + 3; // Flowers
                     } else {
@@ -390,24 +385,24 @@
             }
         }
 
-        // Interactive locations
+        // Interactive locations - buildings at top corners
         const locations = [
             { 
-                x: 3, y: 4, width: 1, height: 1,
+                x: 2, y: 0, width: 1, height: 1,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
                 type: 'christmas'
             },
             { 
-                x: 6, y: 4, width: 1, height: 1,
+                x: 6, y: 0, width: 1, height: 1,
                 name: 'Phone Away',
                 description: 'An app for groups to put their phones away together to stay present with each other',
                 url: '/phone-away',
                 type: 'locker'
             },
             { 
-                x: 7, y: 12, width: 2, height: 2,
+                x: 6, y: 8, width: 2, height: 2,
                 name: 'Coming Soon',
                 description: 'This area is under construction. More apps coming soon!',
                 url: null,
@@ -427,10 +422,10 @@
             const py = y * TILE_SIZE;
 
             if (type === 1) {
-                // Tree - full sprite is 64x80, scale it up significantly
-                drawSprite(sprites.tree, 0, 0, 64, 80, px - 16, py - 48, 96, 112);
+                // Tree - much bigger, fewer trees
+                drawSprite(sprites.tree, 0, 0, 64, 80, px - 32, py - 80, 160, 200);
             } else if (type === 2) {
-                // Path - using new path tilemap (assuming center tile)
+                // Path - using dirt/path tile (bottom right of tilemap)
                 drawSprite(sprites.path, 16, 16, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else if (type === 5) {
                 // Water
@@ -441,7 +436,7 @@
                 // Decoration placeholder (will be drawn separately)
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else if (type === 8) {
-                // Snow - using snow tile from new tilemap (top-left corner has snow)
+                // Snow - using top-left snow tile from tilemap
                 drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else {
                 // Grass
@@ -455,22 +450,18 @@
             const py = dec.y * TILE_SIZE;
             
             // Using left 3 columns of Outdoor_Decor_Free sprite sheet
-            // Row 0 (0-2): Grass tufts
-            // Row 1 (3-5): Flowers  
-            // Row 2 (6-8): Rocks and logs
-            
             const col = dec.type % 3;
             const row = Math.floor(dec.type / 3);
             
             if (row === 0) {
                 // Grass tufts - smaller, subtle
-                drawSprite(sprites.decor, col * 16, 0, 16, 16, px + 20, py + 24, 24, 24);
+                drawSprite(sprites.decor, col * 16, 0, 16, 16, px + 30, py + 36, 36, 36);
             } else if (row === 1) {
                 // Flowers - medium size
-                drawSprite(sprites.decor, col * 16, 16, 16, 16, px + 16, py + 20, 32, 32);
+                drawSprite(sprites.decor, col * 16, 16, 16, 16, px + 24, py + 30, 48, 48);
             } else {
                 // Rocks/logs - larger
-                drawSprite(sprites.decor, col * 16, 32, 16, 16, px + 12, py + 24, 40, 36);
+                drawSprite(sprites.decor, col * 16, 32, 16, 16, px + 18, py + 36, 60, 54);
             }
         }
 
@@ -479,13 +470,13 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // New Christmas tree sprite - scale it up significantly  
-            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 32, py - 64, 128, 128);
+            // Massive Christmas tree at top of screen
+            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 96, py - 32, 288, 288);
             
-            // Add presents underneath
-            drawSprite(sprites.present1, 0, 0, 16, 16, px - 16, py + 32, 32, 32);
-            drawSprite(sprites.present3, 0, 0, 16, 16, px + 16, py + 36, 28, 28);
-            drawSprite(sprites.present1, 0, 0, 16, 16, px + 8, py + 28, 24, 24);
+            // Add presents underneath - bigger
+            drawSprite(sprites.present1, 0, 0, 16, 16, px - 32, py + 160, 64, 64);
+            drawSprite(sprites.present3, 0, 0, 16, 16, px + 48, py + 176, 56, 56);
+            drawSprite(sprites.present1, 0, 0, 16, 16, px + 16, py + 144, 48, 48);
         }
 
         // Draw locker building
@@ -493,11 +484,11 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Use modified house as locker structure - scale up significantly
-            drawSprite(sprites.house, 0, 0, 80, 96, px - 48, py - 80, 144, 176);
+            // Massive cabin at top of screen
+            drawSprite(sprites.house, 0, 0, 80, 96, px - 112, py - 48, 288, 352);
             
             // Add lock/chest imagery
-            drawSprite(sprites.chest, 0, 0, 16, 16, px + 8, py + 64, 32, 32);
+            drawSprite(sprites.chest, 0, 0, 16, 16, px + 16, py + 224, 64, 64);
         }
 
         // Draw construction zone
@@ -505,19 +496,19 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Fence barriers - scaled up
+            // Fence barriers - scaled massively
             drawSprite(sprites.fence, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
             drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
             
-            // Construction sign - bigger text
+            // Construction sign - much bigger text
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(px + 12, py + 12, 104, 40);
+            ctx.fillRect(px + 18, py + 18, 156, 60);
             ctx.fillStyle = '#FFD700';
-            ctx.font = '14px "Press Start 2P"';
+            ctx.font = '20px "Press Start 2P"';
             ctx.textAlign = 'center';
-            ctx.fillText('SOON', px + 64, py + 40);
+            ctx.fillText('SOON', px + 96, py + 58);
         }
 
         // Draw buildings/locations
@@ -549,15 +540,17 @@
                 frameY = 0; // Row 0 = idle
             }
             
+            const playerSize = TILE_SIZE * 2; // Character fills 2 tiles (192px)
+            
             ctx.save();
             
             // Flip horizontally for left movement
             if (player.facingLeft) {
-                ctx.translate(px + TILE_SIZE, py);
+                ctx.translate(px + playerSize, py);
                 ctx.scale(-1, 1);
-                drawSprite(sprites.player, frameX, frameY, 32, 32, 0, 0, TILE_SIZE, TILE_SIZE);
+                drawSprite(sprites.player, frameX, frameY, 32, 32, 0, 0, playerSize, playerSize);
             } else {
-                drawSprite(sprites.player, frameX, frameY, 32, 32, px, py, TILE_SIZE, TILE_SIZE);
+                drawSprite(sprites.player, frameX, frameY, 32, 32, px, py, playerSize, playerSize);
             }
             
             ctx.restore();
