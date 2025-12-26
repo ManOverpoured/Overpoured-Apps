@@ -346,7 +346,9 @@
         let keys = {};
         let touchDirection = null;
         let lastMoveTime = 0;
+        let lastAnimTime = 0;
         const MOVE_DELAY = 225; // Increased from 150 (50% slower)
+        const ANIM_DELAY = 100; // Animation frame change speed
         let gameStarted = false;
         let currentPrompt = null;
         let promptShowing = false;
@@ -573,6 +575,9 @@
             
             ctx.save();
             
+            // Ensure we don't clip outside canvas
+            ctx.globalCompositeOperation = 'source-over';
+            
             // Flip horizontally for left movement
             if (player.facingLeft) {
                 ctx.translate(px + playerSize, py);
@@ -723,7 +728,6 @@
                         player.x = newX;
                         player.y = newY;
                         player.moving = true;
-                        player.frame = (player.frame + 1) % 6; // Cycle through 6 frames
                         lastMoveTime = now;
 
                         setTimeout(() => { 
@@ -822,6 +826,13 @@
                 if (keys['ArrowDown'] || keys['s'] || keys['S'] || touchDirection === 'down') movePlayer(0, 1);
                 if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchDirection === 'left') movePlayer(-1, 0);
                 if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchDirection === 'right') movePlayer(1, 0);
+            }
+
+            // Animate player frames while moving
+            const now = Date.now();
+            if (player.moving && now - lastAnimTime > ANIM_DELAY) {
+                player.frame = (player.frame + 1) % 6;
+                lastAnimTime = now;
             }
 
             // Clear and draw
