@@ -430,8 +430,8 @@
             const py = y * TILE_SIZE;
 
             if (type === 1) {
-                // Tree
-                drawSprite(sprites.tree, 0, 0, 64, 80, px - 32, py - 80, 160, 200);
+                // Tree - bigger now to match smaller character
+                drawSprite(sprites.tree, 0, 0, 64, 80, px - 48, py - 96, 200, 250);
             } else if (type === 2) {
                 // Path middle
                 drawSprite(sprites.pathMiddle, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -573,7 +573,7 @@
                 frameY = 3 * 107; // Row 3 = idle
             }
             
-            const playerSize = TILE_SIZE * 2; // Character fills 2 tiles (192px)
+            const playerSize = TILE_SIZE * 1.5; // Character now 1.5 tiles (smaller)
             
             ctx.save();
             
