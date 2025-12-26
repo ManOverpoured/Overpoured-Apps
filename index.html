@@ -263,7 +263,7 @@
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <canvas id="gameCanvas" width="624" height="864"></canvas>
         <div id="instructions">
             ARROW KEYS - Move<br>
             SPACE/ENTER - Interact
@@ -292,9 +292,9 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const TILE_SIZE = 32;
-        const GRID_WIDTH = 20;
-        const GRID_HEIGHT = 15;
+        const TILE_SIZE = 48; // Increased from 32 for better zoom
+        const GRID_WIDTH = 13; // Reduced for portrait/zoomed view
+        const GRID_HEIGHT = 18; // Increased for portrait orientation
 
         // Load sprites
         const sprites = {};
@@ -326,11 +326,12 @@
 
         // Game state
         let player = {
-            x: 10,
-            y: 10,
-            direction: 0, // 0=down, 1=up, 2=left, 3=right
+            x: 6,
+            y: 14,
+            direction: 0, // 0=idle, 3=down, 4=right, 5=up
             frame: 0,
             moving: false,
+            facingLeft: false,
             spriteWidth: 32,
             spriteHeight: 32
         };
@@ -344,43 +345,60 @@
         let currentPrompt = null;
         let promptShowing = false;
 
-        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water)
+        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path, 5 = water, 7 = decoration)
         const mapData = [
-            [0,0,1,0,0,0,0,0,0,2,2,0,0,0,0,0,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,2,2,0,0,1,0,0,0,0,0,0],
-            [0,0,0,1,0,0,0,0,0,2,2,0,0,0,0,0,0,0,0,1],
-            [1,0,0,0,0,0,4,0,2,2,2,2,0,0,3,0,0,0,0,0],
-            [0,0,0,0,0,0,4,4,2,2,2,2,0,3,3,3,0,0,0,1],
-            [0,1,0,0,0,0,4,2,2,2,2,2,2,3,3,3,0,0,0,0],
-            [0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,1,0,0],
-            [0,0,0,1,0,2,2,2,0,0,0,0,2,2,2,0,0,0,0,0],
-            [0,0,0,0,0,2,2,0,0,0,0,0,0,2,2,0,0,0,0,1],
-            [0,1,0,0,0,2,2,0,0,0,0,0,0,2,2,0,0,0,0,0],
-            [5,5,5,0,0,0,2,2,2,2,2,2,2,2,0,0,1,0,0,0],
-            [5,5,5,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0],
-            [5,5,5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
-            [0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,6,6,0],
-            [0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,0]
+            [0,1,0,0,0,0,0,0,0,1,0,0,0],
+            [0,0,0,7,0,0,0,0,0,0,0,1,0],
+            [0,0,0,0,0,0,2,0,0,0,0,0,0],
+            [1,0,0,0,0,0,2,0,0,0,0,0,1],
+            [0,0,7,0,0,2,2,2,0,0,7,0,0],
+            [0,0,0,0,4,2,2,2,3,0,0,0,0],
+            [0,7,0,4,4,2,2,2,3,3,0,0,1],
+            [0,0,0,4,4,2,2,2,3,3,0,0,0],
+            [0,1,0,0,0,2,2,2,0,0,0,7,0],
+            [0,0,0,0,0,2,2,2,0,0,0,0,0],
+            [0,0,7,0,0,2,2,2,0,1,0,0,0],
+            [1,0,0,0,0,2,2,2,0,0,0,0,1],
+            [0,0,0,7,0,0,2,0,0,0,7,0,0],
+            [0,0,0,0,0,0,2,0,0,0,0,0,0],
+            [5,5,0,0,0,0,0,0,0,0,0,0,0],
+            [5,5,5,0,1,0,0,0,0,1,0,0,0],
+            [5,5,0,0,0,0,7,0,0,0,6,6,0],
+            [0,0,0,1,0,0,0,0,0,0,6,6,0]
         ];
+
+        // Decoration positions (will render flowers, logs, etc)
+        const decorations = [];
+        for (let y = 0; y < mapData.length; y++) {
+            for (let x = 0; x < mapData[y].length; x++) {
+                if (mapData[y][x] === 7) {
+                    decorations.push({
+                        x: x,
+                        y: y,
+                        type: Math.floor(Math.random() * 4) // Random decoration type
+                    });
+                }
+            }
+        }
 
         // Interactive locations
         const locations = [
             { 
-                x: 6, y: 3, width: 1, height: 3,
+                x: 4, y: 5, width: 1, height: 3,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
                 type: 'christmas'
             },
             { 
-                x: 14, y: 3, width: 1, height: 3,
+                x: 8, y: 5, width: 1, height: 3,
                 name: 'Phone Away',
                 description: 'An app for groups to put their phones away together to stay present with each other',
                 url: '/phone-away',
                 type: 'locker'
             },
             { 
-                x: 17, y: 13, width: 2, height: 2,
+                x: 10, y: 16, width: 2, height: 2,
                 name: 'Coming Soon',
                 description: 'This area is under construction. More apps coming soon!',
                 url: null,
@@ -400,9 +418,8 @@
             const py = y * TILE_SIZE;
 
             if (type === 1) {
-                // Tree - the sprite is 64x80 total (2 frames), each frame is 32x40
-                // Use first frame at 0,0 with size 32x40
-                drawSprite(sprites.tree, 0, 0, 32, 40, px, py - 8, 32, 40);
+                // Tree - full sprite is 64x80 (appears to be 2 trees, use left half)
+                drawSprite(sprites.tree, 0, 0, 64, 80, px - 8, py - 32, 64, 80);
             } else if (type === 2) {
                 // Path
                 drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
@@ -411,9 +428,33 @@
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
                 ctx.fillStyle = 'rgba(64, 164, 223, 0.7)';
                 ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (type === 7) {
+                // Decoration placeholder (will be drawn separately)
+                drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else {
                 // Grass
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        // Draw decorations
+        function drawDecoration(dec) {
+            const px = dec.x * TILE_SIZE;
+            const py = dec.y * TILE_SIZE;
+            
+            // Different decoration types from the decor sprite sheet
+            if (dec.type === 0) {
+                // Flower
+                drawSprite(sprites.decor, 0, 0, 16, 16, px + 12, py + 12, 24, 24);
+            } else if (dec.type === 1) {
+                // Rock/stone
+                drawSprite(sprites.decor, 16, 0, 16, 16, px + 8, py + 16, 32, 32);
+            } else if (dec.type === 2) {
+                // Mushroom
+                drawSprite(sprites.decor, 32, 0, 16, 16, px + 16, py + 16, 20, 20);
+            } else {
+                // Log
+                drawSprite(sprites.decor, 48, 0, 16, 16, px + 8, py + 20, 32, 24);
             }
         }
 
@@ -480,15 +521,29 @@
             const px = player.x * TILE_SIZE;
             const py = player.y * TILE_SIZE;
             
-            // Player sprite sheet is 192x320 total
-            // 192 width / 6 frames = 32 pixels per frame
-            // Each character frame is 32x32 pixels
+            // Player sprite sheet is 192x320 total (6 frames x 10 rows)
+            // Row 0 = idle, Row 3 = down, Row 4 = right, Row 5 = up
             const frameX = player.frame * 32;
-            const frameY = player.direction * 32;
+            let frameY;
             
-            // Draw the full 32x32 player sprite
-            drawSprite(sprites.player, frameX, frameY, 32, 32, 
-                      px, py, TILE_SIZE, TILE_SIZE);
+            if (player.moving) {
+                frameY = player.direction * 32; // Use direction row when moving
+            } else {
+                frameY = 0; // Row 0 = idle
+            }
+            
+            ctx.save();
+            
+            // Flip horizontally for left movement
+            if (player.facingLeft) {
+                ctx.translate(px + TILE_SIZE, py);
+                ctx.scale(-1, 1);
+                drawSprite(sprites.player, frameX, frameY, 32, 32, 0, 0, TILE_SIZE, TILE_SIZE);
+            } else {
+                drawSprite(sprites.player, frameX, frameY, 32, 32, px, py, TILE_SIZE, TILE_SIZE);
+            }
+            
+            ctx.restore();
         }
 
         // Draw the map
@@ -496,12 +551,17 @@
             for (let y = 0; y < GRID_HEIGHT; y++) {
                 for (let x = 0; x < GRID_WIDTH; x++) {
                     const tile = mapData[y][x];
-                    if (tile === 3 || tile === 4) {
+                    if (tile === 3 || tile === 4 || tile === 6) {
                         drawTile(x, y, 0); // Draw grass under buildings
                     } else {
                         drawTile(x, y, tile);
                     }
                 }
+            }
+            
+            // Draw decorations
+            for (let dec of decorations) {
+                drawDecoration(dec);
             }
             
             drawLocations();
@@ -586,11 +646,20 @@
             const newY = player.y + dy;
 
             // Update direction based on sprite sheet rows
-            // Row 0 = down, Row 1 = left, Row 2 = right, Row 3 = up
-            if (dy > 0) player.direction = 0; // down
-            else if (dx < 0) player.direction = 1; // left
-            else if (dx > 0) player.direction = 2; // right
-            else if (dy < 0) player.direction = 3; // up
+            // Row 0 = idle, Row 3 = down, Row 4 = right, Row 5 = up
+            if (dy > 0) {
+                player.direction = 3; // down
+                player.facingLeft = false;
+            } else if (dy < 0) {
+                player.direction = 5; // up
+                player.facingLeft = false;
+            } else if (dx < 0) {
+                player.direction = 4; // use right animation flipped
+                player.facingLeft = true;
+            } else if (dx > 0) {
+                player.direction = 4; // right
+                player.facingLeft = false;
+            }
 
             // Check bounds and collisions
             if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
