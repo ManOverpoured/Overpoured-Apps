@@ -2,62 +2,688 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Overpoured Apps</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #f5f5f5;
+            background: #1a1a2e;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #fff;
         }
-        h1 {
-            color: #333;
+
+        #gameContainer {
+            position: relative;
+            background: #0f0f1e;
+            border: 4px solid #4a4a6a;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
         }
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+
+        #gameCanvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
-        .app-card {
-            background: white;
-            padding: 20px;
+
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 10px;
+            border: 2px solid #4a4a6a;
+            line-height: 1.6;
+        }
+
+        #proximityLabel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px 20px;
+            border: 3px solid #ffd700;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.2s;
+            font-size: 12px;
+            display: none;
+            animation: bounce 0.5s ease;
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #000;
         }
-        .app-card:hover {
-            transform: translateY(-5px);
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
         }
-        .app-card h2 {
-            margin: 0 0 10px 0;
-            color: #2563eb;
+
+        #interactionPrompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 24px 32px;
+            border: 4px solid #4a4a6a;
+            border-radius: 12px;
+            max-width: 80%;
+            display: none;
+            animation: fadeInScale 0.3s ease;
+            z-index: 100;
+        }
+
+        @keyframes fadeInScale {
+            from { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        #interactionPrompt h2 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #interactionPrompt p {
+            font-size: 10px;
+            line-height: 1.8;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        #interactionPrompt .buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        #interactionPrompt button {
+            background: #2a5a2a;
+            border: 3px solid #4a8a4a;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 10px;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.1s;
+        }
+
+        #interactionPrompt button:hover {
+            background: #4a8a4a;
+            transform: scale(1.05);
+        }
+
+        #interactionPrompt button.cancel {
+            background: #5a2a2a;
+            border-color: #8a4a4a;
+        }
+
+        #interactionPrompt button.cancel:hover {
+            background: #8a4a4a;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            z-index: 50;
+        }
+
+        #dpad {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+        }
+
+        .dpad-button {
+            background: #2a2a4a;
+            border: 3px solid #4a4a6a;
+            cursor: pointer;
+            user-select: none;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #8a8aaa;
+            transition: all 0.1s;
+        }
+
+        .dpad-button:active {
+            background: #4a4a6a;
+            border-color: #6a6a8a;
+            transform: scale(0.95);
+        }
+
+        .dpad-button.up { grid-column: 2; grid-row: 1; }
+        .dpad-button.left { grid-column: 1; grid-row: 2; }
+        .dpad-button.right { grid-column: 3; grid-row: 2; }
+        .dpad-button.down { grid-column: 2; grid-row: 3; }
+
+        #actionButton {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #8a3a3a;
+            border: 4px solid #aa5a5a;
+            cursor: pointer;
+            user-select: none;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            transition: all 0.1s;
+            box-shadow: 0 4px 0 #6a2a2a;
+        }
+
+        #actionButton:active {
+            background: #aa5a5a;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #6a2a2a;
+        }
+
+        @media (min-width: 768px) {
+            #controls {
+                display: none;
+            }
+        }
+
+        @media (max-width: 767px) {
+            #instructions {
+                display: none;
+            }
+            #gameCanvas {
+                max-width: 100vw;
+                max-height: 55vh;
+            }
+            #interactionPrompt {
+                max-width: 90%;
+                padding: 20px 24px;
+            }
+            #interactionPrompt h2 {
+                font-size: 12px;
+            }
+            #interactionPrompt p {
+                font-size: 9px;
+            }
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Welcome to Overpoured Apps</h1>
-    <p>A collection of web applications</p>
-    
-    <div class="app-grid">
-        <a href="/christmas-bingo" class="app-card">
-            <h2>🎄 Christmas Bingo</h2>
-            <p>Play bingo with Christmas movie tropes</p>
-        </a>
-        
-        <a href="/phone-away" class="app-card">
-            <h2>📱 Phone Away</h2>
-            <p>Track your phone-free time</p>
-        </a>
-        
-        <div class="app-card" style="opacity: 0.5;">
-            <h2>🚀 Coming Soon</h2>
-            <p>More apps on the way...</p>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <div id="instructions">
+            ARROW KEYS - Move<br>
+            SPACE/ENTER - Interact
+        </div>
+        <div id="proximityLabel"></div>
+        <div id="interactionPrompt">
+            <h2 id="promptTitle"></h2>
+            <p id="promptDescription"></p>
+            <div class="buttons">
+                <button id="enterButton">ENTER</button>
+                <button class="cancel" id="cancelButton">CANCEL</button>
+            </div>
         </div>
     </div>
+
+    <div id="controls">
+        <div id="dpad">
+            <div class="dpad-button up" data-dir="up">▲</div>
+            <div class="dpad-button left" data-dir="left">◄</div>
+            <div class="dpad-button right" data-dir="right">►</div>
+            <div class="dpad-button down" data-dir="down">▼</div>
+        </div>
+        <div id="actionButton">A</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const TILE_SIZE = 32;
+        const GRID_WIDTH = 20;
+        const GRID_HEIGHT = 15;
+
+        // Load sprites
+        const sprites = {};
+        const spriteFiles = {
+            player: 'Player.png',
+            grass: 'Grass_Middle.png',
+            path: 'Path_Middle.png',
+            tree: 'Oak_Tree.png',
+            treeSmall: 'Oak_Tree_Small.png',
+            house: 'House_1_Wood_Base_Blue.png',
+            decor: 'Outdoor_Decor_Free.png',
+            chest: 'Chest.png',
+            fence: 'Fences.png'
+        };
+
+        let spritesLoaded = 0;
+        const totalSprites = Object.keys(spriteFiles).length;
+
+        for (let key in spriteFiles) {
+            sprites[key] = new Image();
+            sprites[key].src = spriteFiles[key];
+            sprites[key].onload = () => {
+                spritesLoaded++;
+                if (spritesLoaded === totalSprites) {
+                    startGame();
+                }
+            };
+        }
+
+        // Game state
+        let player = {
+            x: 10,
+            y: 12,
+            direction: 0, // 0=down, 1=up, 2=left, 3=right
+            frame: 0,
+            moving: false,
+            spriteWidth: 16,
+            spriteHeight: 16
+        };
+
+        let animationFrame = 0;
+        let keys = {};
+        let lastMoveTime = 0;
+        const MOVE_DELAY = 150;
+        let gameStarted = false;
+        let currentPrompt = null;
+        let promptShowing = false;
+
+        // Map data (0 = walkable grass, 1 = tree/blocked, 2 = path)
+        const mapData = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,1,0,0,2,2,2,2,0,0,1,0,0,0,0,1],
+            [1,0,0,0,0,1,0,0,2,2,2,2,0,0,1,0,0,0,0,1],
+            [1,0,0,0,0,1,1,1,2,2,2,2,1,1,1,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,1],
+            [1,1,1,0,0,0,0,0,2,2,2,2,0,0,0,0,0,1,1,1],
+            [1,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,1],
+            [1,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,1],
+            [1,0,0,0,0,2,2,3,0,0,0,0,4,2,2,0,0,0,0,1],
+            [1,0,0,0,0,2,2,3,0,0,0,0,4,2,2,0,0,0,0,1],
+            [1,0,0,0,0,2,2,3,0,0,0,0,4,2,2,0,0,0,0,1],
+            [1,0,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // Interactive locations
+        const locations = [
+            { 
+                x: 7, y: 8, width: 1, height: 3,
+                name: 'Christmas Bingo',
+                description: 'Play bingo while you watch your favorite Christmas Movie or show',
+                url: '/christmas-bingo',
+                type: 'christmas'
+            },
+            { 
+                x: 12, y: 8, width: 1, height: 3,
+                name: 'Phone Away',
+                description: 'An app for groups to put their phones away together to stay present with each other',
+                url: '/phone-away',
+                type: 'locker'
+            },
+            { 
+                x: 16, y: 1, width: 2, height: 2,
+                name: 'Coming Soon',
+                description: 'This area is under construction. More apps coming soon!',
+                url: null,
+                locked: true,
+                type: 'construction'
+            }
+        ];
+
+        // Draw sprite from sheet
+        function drawSprite(sprite, sx, sy, sw, sh, dx, dy, dw, dh) {
+            ctx.drawImage(sprite, sx, sy, sw, sh, dx, dy, dw, dh);
+        }
+
+        // Draw tile
+        function drawTile(x, y, type) {
+            const px = x * TILE_SIZE;
+            const py = y * TILE_SIZE;
+
+            if (type === 1) {
+                // Tree
+                drawSprite(sprites.tree, 0, 0, 32, 48, px, py - 16, 32, 48);
+            } else if (type === 2) {
+                // Path
+                drawSprite(sprites.path, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            } else {
+                // Grass
+                drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        // Draw Christmas tree location
+        function drawChristmasTree(loc) {
+            const px = loc.x * TILE_SIZE;
+            const py = loc.y * TILE_SIZE;
+            
+            // Large decorated tree
+            drawSprite(sprites.tree, 0, 0, 32, 48, px - 16, py - 32, 64, 96);
+            
+            // Add decorations using decor sprite (presents at base)
+            drawSprite(sprites.decor, 32, 16, 16, 16, px - 8, py + 32, 16, 16);
+            drawSprite(sprites.decor, 48, 16, 16, 16, px + 24, py + 32, 16, 16);
+        }
+
+        // Draw locker building
+        function drawLockerBuilding(loc) {
+            const px = loc.x * TILE_SIZE;
+            const py = loc.y * TILE_SIZE;
+            
+            // Use modified house as locker structure
+            drawSprite(sprites.house, 0, 0, 80, 96, px - 24, py - 32, 80, 96);
+            
+            // Add lock/chest imagery
+            drawSprite(sprites.chest, 0, 0, 16, 16, px, py + 32, 16, 16);
+        }
+
+        // Draw construction zone
+        function drawConstruction(loc) {
+            const px = loc.x * TILE_SIZE;
+            const py = loc.y * TILE_SIZE;
+            
+            // Fence barriers
+            drawSprite(sprites.fence, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py, TILE_SIZE, TILE_SIZE);
+            drawSprite(sprites.fence, 0, 0, 16, 16, px, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            drawSprite(sprites.fence, 0, 0, 16, 16, px + TILE_SIZE, py + TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            
+            // Construction sign
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(px + 8, py + 8, 48, 20);
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '8px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.fillText('SOON', px + 32, py + 22);
+        }
+
+        // Draw buildings/locations
+        function drawLocations() {
+            for (let loc of locations) {
+                if (loc.type === 'christmas') {
+                    drawChristmasTree(loc);
+                } else if (loc.type === 'locker') {
+                    drawLockerBuilding(loc);
+                } else if (loc.type === 'construction') {
+                    drawConstruction(loc);
+                }
+            }
+        }
+
+        // Draw player character
+        function drawPlayer() {
+            const px = player.x * TILE_SIZE;
+            const py = player.y * TILE_SIZE;
+            
+            // Calculate sprite position in sheet
+            // Player sprite has 6 frames per direction, 4 directions
+            const frameX = player.frame * player.spriteWidth;
+            const frameY = player.direction * player.spriteHeight;
+            
+            drawSprite(sprites.player, frameX, frameY, player.spriteWidth, player.spriteHeight, 
+                      px, py, TILE_SIZE, TILE_SIZE);
+        }
+
+        // Draw the map
+        function drawMap() {
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const tile = mapData[y][x];
+                    if (tile === 3 || tile === 4) {
+                        drawTile(x, y, 0); // Draw grass under buildings
+                    } else {
+                        drawTile(x, y, tile);
+                    }
+                }
+            }
+            
+            drawLocations();
+        }
+
+        // Check if player is near a location
+        function checkProximity() {
+            for (let loc of locations) {
+                const centerX = loc.x + Math.floor(loc.width / 2);
+                const centerY = loc.y + loc.height;
+                const distX = Math.abs(player.x - centerX);
+                const distY = Math.abs(player.y - centerY);
+                
+                if (distX <= 2 && distY <= 2) {
+                    return loc;
+                }
+            }
+            return null;
+        }
+
+        // Update proximity label
+        function updateProximityLabel() {
+            const label = document.getElementById('proximityLabel');
+            const nearLocation = checkProximity();
+            
+            if (nearLocation && !promptShowing) {
+                label.textContent = nearLocation.name;
+                label.style.display = 'block';
+            } else {
+                label.style.display = 'none';
+            }
+        }
+
+        // Show interaction prompt
+        function showInteractionPrompt(location) {
+            promptShowing = true;
+            currentPrompt = location;
+            
+            document.getElementById('promptTitle').textContent = 'Enter ' + location.name + '?';
+            document.getElementById('promptDescription').textContent = location.description;
+            document.getElementById('interactionPrompt').style.display = 'block';
+            document.getElementById('proximityLabel').style.display = 'none';
+        }
+
+        // Hide interaction prompt
+        function hideInteractionPrompt() {
+            promptShowing = false;
+            currentPrompt = null;
+            document.getElementById('interactionPrompt').style.display = 'none';
+        }
+
+        // Handle interaction
+        function interact() {
+            if (promptShowing) return;
+            
+            const nearLocation = checkProximity();
+            if (nearLocation) {
+                showInteractionPrompt(nearLocation);
+            }
+        }
+
+        // Enter location
+        function enterLocation() {
+            if (currentPrompt) {
+                if (currentPrompt.locked) {
+                    hideInteractionPrompt();
+                } else {
+                    window.location.href = currentPrompt.url;
+                }
+            }
+        }
+
+        // Move player
+        function movePlayer(dx, dy) {
+            if (promptShowing) return;
+            
+            const now = Date.now();
+            if (now - lastMoveTime < MOVE_DELAY) return;
+
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+
+            // Update direction
+            if (dy < 0) player.direction = 1; // up
+            else if (dy > 0) player.direction = 0; // down
+            else if (dx < 0) player.direction = 2; // left
+            else if (dx > 0) player.direction = 3; // right
+
+            // Check bounds and collisions
+            if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
+                const tile = mapData[newY][newX];
+                if (tile !== 1) {
+                    // Check building collisions
+                    let canMove = true;
+                    for (let loc of locations) {
+                        if (newX >= loc.x && newX < loc.x + loc.width &&
+                            newY >= loc.y && newY < loc.y + loc.height) {
+                            canMove = false;
+                            break;
+                        }
+                    }
+
+                    if (canMove) {
+                        player.x = newX;
+                        player.y = newY;
+                        player.moving = true;
+                        player.frame = (player.frame + 1) % 6; // Cycle through 6 frames
+                        lastMoveTime = now;
+
+                        setTimeout(() => { 
+                            player.moving = false; 
+                        }, MOVE_DELAY);
+                    }
+                }
+            }
+        }
+
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            if (promptShowing && (e.key === 'Escape' || e.key === 'x' || e.key === 'X')) {
+                hideInteractionPrompt();
+                return;
+            }
+            
+            keys[e.key] = true;
+            
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                if (promptShowing) {
+                    enterLocation();
+                } else {
+                    interact();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Button handlers
+        document.getElementById('enterButton').addEventListener('click', enterLocation);
+        document.getElementById('cancelButton').addEventListener('click', hideInteractionPrompt);
+
+        // Touch controls
+        document.querySelectorAll('.dpad-button').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const dir = btn.dataset.dir;
+                if (dir === 'up') movePlayer(0, -1);
+                else if (dir === 'down') movePlayer(0, 1);
+                else if (dir === 'left') movePlayer(-1, 0);
+                else if (dir === 'right') movePlayer(1, 0);
+            });
+
+            btn.addEventListener('click', (e) => {
+                const dir = btn.dataset.dir;
+                if (dir === 'up') movePlayer(0, -1);
+                else if (dir === 'down') movePlayer(0, 1);
+                else if (dir === 'left') movePlayer(-1, 0);
+                else if (dir === 'right') movePlayer(1, 0);
+            });
+        });
+
+        document.getElementById('actionButton').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (promptShowing) {
+                enterLocation();
+            } else {
+                interact();
+            }
+        });
+
+        document.getElementById('actionButton').addEventListener('click', () => {
+            if (promptShowing) {
+                enterLocation();
+            } else {
+                interact();
+            }
+        });
+
+        // Game loop
+        function gameLoop() {
+            if (!gameStarted) return;
+
+            // Handle continuous movement
+            if (!promptShowing) {
+                if (keys['ArrowUp'] || keys['w'] || keys['W']) movePlayer(0, -1);
+                if (keys['ArrowDown'] || keys['s'] || keys['S']) movePlayer(0, 1);
+                if (keys['ArrowLeft'] || keys['a'] || keys['A']) movePlayer(-1, 0);
+                if (keys['ArrowRight'] || keys['d'] || keys['D']) movePlayer(1, 0);
+            }
+
+            // Clear and draw
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#2a4a3a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawMap();
+            drawPlayer();
+            
+            updateProximityLabel();
+
+            animationFrame++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        function startGame() {
+            gameStarted = true;
+            gameLoop();
+        }
+    </script>
 </body>
 </html>
