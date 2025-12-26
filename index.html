@@ -299,7 +299,7 @@
         // Load sprites
         const sprites = {};
         const spriteFiles = {
-            player: 'Player.png',
+            player: 'Preston_Sprite_Sheet.png',
             grass: 'Grass_Middle.png',
             pathTile: 'Path_Tile.png',
             pathMiddle: 'Path_Middle.png',
@@ -334,12 +334,12 @@
         let player = {
             x: 4,
             y: 6,
-            direction: 0, // 0=idle, 3=down, 4=right, 5=up
+            direction: 3, // 0=down, 1=right, 2=up, 3=idle
             frame: 0,
             moving: false,
             facingLeft: false,
-            spriteWidth: 32,
-            spriteHeight: 32
+            spriteWidth: 333,  // 2000 / 6 frames
+            spriteHeight: 357  // 1428 / 4 rows
         };
 
         let animationFrame = 0;
@@ -558,15 +558,15 @@
             const px = player.x * TILE_SIZE;
             const py = player.y * TILE_SIZE;
             
-            // Player sprite sheet is 192x320 total (6 frames x 10 rows)
-            // Row 0 = idle, Row 3 = down, Row 4 = right, Row 5 = up
-            const frameX = player.frame * 32;
+            // Preston sprite sheet: Row 0=down, Row 1=right, Row 2=up, Row 3=idle
+            // 6 frames per row, 333x357 per frame
+            const frameX = player.frame * 333;
             let frameY;
             
             if (player.moving) {
-                frameY = player.direction * 32; // Use direction row when moving
+                frameY = player.direction * 357; // Use direction row when moving
             } else {
-                frameY = 0; // Row 0 = idle
+                frameY = 3 * 357; // Row 3 = idle
             }
             
             const playerSize = TILE_SIZE * 2; // Character fills 2 tiles (192px)
@@ -577,9 +577,9 @@
             if (player.facingLeft) {
                 ctx.translate(px + playerSize, py);
                 ctx.scale(-1, 1);
-                drawSprite(sprites.player, frameX, frameY, 32, 32, 0, 0, playerSize, playerSize);
+                drawSprite(sprites.player, frameX, frameY, 333, 357, 0, 0, playerSize, playerSize);
             } else {
-                drawSprite(sprites.player, frameX, frameY, 32, 32, px, py, playerSize, playerSize);
+                drawSprite(sprites.player, frameX, frameY, 333, 357, px, py, playerSize, playerSize);
             }
             
             ctx.restore();
@@ -689,18 +689,18 @@
             const newY = player.y + dy;
 
             // Update direction based on sprite sheet rows
-            // Row 0 = idle, Row 3 = down, Row 4 = right, Row 5 = up
+            // Row 0 = down, Row 1 = right, Row 2 = up, Row 3 = idle
             if (dy > 0) {
-                player.direction = 3; // down
+                player.direction = 0; // down
                 player.facingLeft = false;
             } else if (dy < 0) {
-                player.direction = 5; // up
+                player.direction = 2; // up
                 player.facingLeft = false;
             } else if (dx < 0) {
-                player.direction = 4; // use right animation flipped
+                player.direction = 1; // use right animation flipped
                 player.facingLeft = true;
             } else if (dx > 0) {
-                player.direction = 4; // right
+                player.direction = 1; // right
                 player.facingLeft = false;
             }
 
