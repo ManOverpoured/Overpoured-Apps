@@ -301,7 +301,10 @@
         const spriteFiles = {
             player: 'Player.png',
             grass: 'Grass_Middle.png',
-            path: 'path-tilemap.png',
+            pathTile: 'Path_Tile.png',
+            pathMiddle: 'Path_Middle.png',
+            waterTile: 'Water_Tile.png',
+            waterMiddle: 'Water_Middle.png',
             tree: 'Oak_Tree.png',
             christmasTree: 'main-tree.png',
             present1: 'present1.png',
@@ -348,18 +351,21 @@
         let currentPrompt = null;
         let promptShowing = false;
 
-        // Map data - no snow, proper pathways connecting buildings
+        // Map data - proper paths with transitions, water with edges
+        // 2 = path, 5 = water, 9 = path top-left, 10 = path top, 11 = path top-right
+        // 12 = path left, 13 = path right, 14 = path bottom-left, 15 = path bottom, 16 = path bottom-right
+        // 17 = water edge tiles (similar pattern)
         const mapData = [
-            [0,7,4,2,2,2,3,7],
-            [7,0,0,2,2,2,0,0],
-            [0,0,0,2,2,2,0,7],
-            [1,0,0,2,2,2,0,0],
-            [0,0,7,2,2,2,7,0],
-            [0,7,0,2,2,2,0,0],
-            [7,0,0,2,2,2,0,7],
+            [0,7,4,9,10,11,3,7],
+            [7,0,0,12,2,13,0,0],
+            [0,0,0,12,2,13,0,7],
+            [1,0,0,12,2,13,0,0],
+            [0,0,7,12,2,13,7,0],
+            [0,7,0,12,2,13,0,0],
+            [7,0,0,14,15,16,0,7],
             [0,0,7,0,0,7,0,1],
-            [5,5,0,0,7,0,6,6],
-            [5,5,7,1,0,7,6,6]
+            [5,5,5,0,7,0,6,6],
+            [5,5,5,1,0,7,6,6]
         ];
 
         // Decoration positions with more variety
@@ -385,17 +391,17 @@
             }
         }
 
-        // Interactive locations - detection zones moved left by 1 tile
+        // Interactive locations - BUILDINGS BACK TO ORIGINAL POSITIONS
         const locations = [
             { 
-                x: 1, y: 0, width: 1, height: 1,
+                x: 2, y: 0, width: 1, height: 1,
                 name: 'Christmas Bingo',
                 description: 'Play bingo while you watch your favorite Christmas Movie or show',
                 url: '/christmas-bingo',
                 type: 'christmas'
             },
             { 
-                x: 5, y: 0, width: 1, height: 1,
+                x: 6, y: 0, width: 1, height: 1,
                 name: 'Phone Away',
                 description: 'An app for groups to put their phones away together to stay present with each other',
                 url: '/phone-away',
@@ -422,18 +428,31 @@
             const py = y * TILE_SIZE;
 
             if (type === 1) {
-                // Tree - much bigger, fewer trees
+                // Tree
                 drawSprite(sprites.tree, 0, 0, 64, 80, px - 32, py - 80, 160, 200);
             } else if (type === 2) {
-                // Path - using original path middle tile
-                drawSprite(sprites.path, 16, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+                // Path middle
+                drawSprite(sprites.pathMiddle, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
+            } else if (type >= 9 && type <= 16) {
+                // Path transition tiles - using 3x3 grid from Path_Tile
+                // Grid layout: 9=TL, 10=T, 11=TR, 12=L, (center not used), 13=R, 14=BL, 15=B, 16=BR
+                const tileMap = {
+                    9: [0, 0],   // top-left
+                    10: [16, 0],  // top
+                    11: [32, 0],  // top-right
+                    12: [0, 16],  // left
+                    13: [32, 16], // right
+                    14: [0, 32],  // bottom-left
+                    15: [16, 32], // bottom
+                    16: [32, 32]  // bottom-right
+                };
+                const [sx, sy] = tileMap[type];
+                drawSprite(sprites.pathTile, sx, sy, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else if (type === 5) {
-                // Water
-                drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
-                ctx.fillStyle = 'rgba(64, 164, 223, 0.7)';
-                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                // Water middle
+                drawSprite(sprites.waterMiddle, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else if (type === 7) {
-                // Decoration placeholder (will be drawn separately)
+                // Decoration placeholder
                 drawSprite(sprites.grass, 0, 0, 16, 16, px, py, TILE_SIZE, TILE_SIZE);
             } else {
                 // Grass
@@ -467,13 +486,13 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Massive Christmas tree at top of screen - moved left slightly
-            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 128, py - 32, 288, 288);
+            // Massive Christmas tree at top of screen
+            drawSprite(sprites.christmasTree, 0, 0, 64, 64, px - 96, py - 32, 288, 288);
             
-            // Add presents underneath - moved down to be under tree
-            drawSprite(sprites.present1, 0, 0, 16, 16, px - 64, py + 200, 64, 64);
-            drawSprite(sprites.present3, 0, 0, 16, 16, px + 16, py + 216, 56, 56);
-            drawSprite(sprites.present1, 0, 0, 16, 16, px - 16, py + 184, 48, 48);
+            // Add presents underneath tree
+            drawSprite(sprites.present1, 0, 0, 16, 16, px - 32, py + 200, 64, 64);
+            drawSprite(sprites.present3, 0, 0, 16, 16, px + 48, py + 216, 56, 56);
+            drawSprite(sprites.present1, 0, 0, 16, 16, px + 16, py + 184, 48, 48);
         }
 
         // Draw locker building
@@ -481,11 +500,12 @@
             const px = loc.x * TILE_SIZE;
             const py = loc.y * TILE_SIZE;
             
-            // Massive cabin at top of screen
-            drawSprite(sprites.house, 0, 0, 80, 96, px - 112, py - 48, 288, 352);
+            // Full cabin - adjusted to show entire building (80x96 sprite)
+            // Scale to about 240x288 to show full building without being too massive
+            drawSprite(sprites.house, 0, 0, 80, 96, px - 88, py - 96, 240, 288);
             
-            // Add lock/chest imagery
-            drawSprite(sprites.chest, 0, 0, 16, 16, px + 16, py + 224, 64, 64);
+            // Add lock/chest imagery at bottom
+            drawSprite(sprites.chest, 0, 0, 16, 16, px + 16, py + 144, 64, 64);
         }
 
         // Draw construction zone
@@ -577,11 +597,13 @@
         // Check if player is near a location
         function checkProximity() {
             for (let loc of locations) {
-                // Check if player is directly in front of the building (1 tile below it)
-                const distX = Math.abs(player.x - loc.x);
+                // Check if player is one tile LEFT and directly in front of the building
+                // Building is at loc.x, so detection is at loc.x - 1
+                const detectionX = loc.x - 1;
+                const distX = player.x - detectionX;
                 const distY = player.y - (loc.y + loc.height);
                 
-                // Must be directly in front (same x, 0-1 tiles below)
+                // Must be at detection position (one tile left of building) and 0-1 tiles below
                 if (distX === 0 && distY >= 0 && distY <= 1) {
                     return loc;
                 }
